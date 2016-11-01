@@ -8,6 +8,10 @@ class Vertex
 {
 public:
 
+	Vertex() {
+
+	}
+
 	Vertex(double x, double y, double z)
 	{
 		this->x = x;
@@ -20,7 +24,7 @@ public:
 	}
 
 	double x, y, z;
-	HalfEdge* nextHalfEdge;
+	pair<int, int> nextHalfEdge;
 
 };
 

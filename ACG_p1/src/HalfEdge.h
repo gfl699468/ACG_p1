@@ -12,7 +12,7 @@ public:
 	{
 	}
 
-	HalfEdge(Vertex* orivertex) {
+	HalfEdge(int orivertex) {
 
 	}
 
@@ -20,10 +20,11 @@ public:
 	{
 	}
 	int ori, dest;
-	HalfEdge* pair;
-	HalfEdge* nextHalfEdge;
-	Vertex* oriVertex;
-	Face* face;
+	pair<int, int> pairEdge;
+	pair<int, int> nextHalfEdge;
+	pair<int, int> prevHalfEdge;
+	int oriVertex;
+	int face;
 
 };
 

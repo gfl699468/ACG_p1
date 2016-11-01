@@ -19,8 +19,8 @@ private:
 	map<pair<int, int>, HalfEdge> halfEdge_map;
 	map<pair<int, int>, HalfEdge> halfEdgePairs_map;
 	vector<tuple<int, int, int>> facet;
-	vector<Vertex> vertex;
-	vector<Face> face;
+	map<int, Vertex> vertex;
+	map<int, Face> face;
 
 	regex comment = regex("^#.+|#");
 	regex shape_begin = regex("^[[:space:]]*Shape[[:space:]]*[{]", regex_constants::extended);
@@ -64,7 +64,7 @@ private:
 							double y = stod(tmp, &sz);
 							tmp = tmp.substr(sz);
 							double z = stod(tmp);
-							vertex.push_back(Vertex(x, y, z));
+							vertex.insert(make_pair(vertex.size(),Vertex(x, y, z)));
 						}
 						else {
 							cout << "Unkown data in point field!" << endl;
@@ -248,16 +248,22 @@ private:
 		halfEdge_map[make_pair(v1, v2)] = edge1;
 		halfEdge_map[make_pair(v2, v3)] = edge2;
 		halfEdge_map[make_pair(v3, v1)] = edge3;
-		halfEdge_map[make_pair(v1, v2)].nextHalfEdge = &halfEdge_map[make_pair(v2, v3)];
-		halfEdge_map[make_pair(v2, v3)].nextHalfEdge = &halfEdge_map[make_pair(v3, v1)];
-		halfEdge_map[make_pair(v3, v1)].nextHalfEdge = &halfEdge_map[make_pair(v1, v2)];
-		halfEdge_map[make_pair(v1, v2)].oriVertex = &vertex[v1];
-		halfEdge_map[make_pair(v2, v3)].oriVertex = &vertex[v2];
-		halfEdge_map[make_pair(v3, v1)].oriVertex = &vertex[v3];
-		face.push_back(Face(&halfEdge_map[make_pair(v1, v2)]));
-		halfEdge_map[make_pair(v1, v2)].face = &face.back();
-		halfEdge_map[make_pair(v2, v3)].face = &face.back();
-		halfEdge_map[make_pair(v3, v1)].face = &face.back();
+		halfEdge_map[make_pair(v1, v2)].nextHalfEdge = make_pair(v2, v3);
+		halfEdge_map[make_pair(v2, v3)].nextHalfEdge = make_pair(v3, v1);
+		halfEdge_map[make_pair(v3, v1)].nextHalfEdge = make_pair(v1, v2);
+		halfEdge_map[make_pair(v1, v2)].prevHalfEdge = make_pair(v3, v1);
+		halfEdge_map[make_pair(v2, v3)].prevHalfEdge = make_pair(v1, v2);
+		halfEdge_map[make_pair(v3, v1)].prevHalfEdge = make_pair(v2, v3);
+		halfEdge_map[make_pair(v1, v2)].oriVertex = v1;
+		vertex[v1].nextHalfEdge = make_pair(v1, v2);
+		halfEdge_map[make_pair(v2, v3)].oriVertex = v2;
+		vertex[v2].nextHalfEdge = make_pair(v2, v3);
+		halfEdge_map[make_pair(v3, v1)].oriVertex = v3;
+		vertex[v3].nextHalfEdge = make_pair(v3, v1);
+		face.insert(make_pair(face.size(), Face(make_pair(v1, v2))));
+		halfEdge_map[make_pair(v1, v2)].face = face.size() - 1;
+		halfEdge_map[make_pair(v2, v3)].face = face.size() - 1;
+		halfEdge_map[make_pair(v3, v1)].face = face.size() - 1;
 		halfEdgePairs_map[make_pair((v1 + v2), abs(v1 - v2))] = edge1;
 		halfEdgePairs_map[make_pair((v2 + v3), abs(v2 - v3))] = edge2;
 		halfEdgePairs_map[make_pair((v3 + v1), abs(v3 - v1))] = edge3;
@@ -277,16 +283,16 @@ private:
 					loadFacet(v1, v2, v3);
 					flag = true;
 				}
-				halfEdge_map[make_pair(v1, v2)].pair = &halfEdge_map[make_pair(a1, a2)];
-				halfEdge_map[make_pair(a1, a2)].pair = &halfEdge_map[make_pair(v1, v2)];
+				halfEdge_map[make_pair(v1, v2)].pairEdge = make_pair(a1, a2);
+				halfEdge_map[make_pair(a1, a2)].pairEdge = make_pair(v1, v2);
 			}
 			else {
 				if (!flag) {
 					loadFacet(v2, v1, v3);
 					flag = true;
 				}
-				halfEdge_map[make_pair(v2, v1)].pair = &halfEdge_map[make_pair(a1, a2)];
-				halfEdge_map[make_pair(a1, a2)].pair = &halfEdge_map[make_pair(v2, v1)];
+				halfEdge_map[make_pair(v2, v1)].pairEdge = make_pair(a1, a2);
+				halfEdge_map[make_pair(a1, a2)].pairEdge = make_pair(v2, v1);
 			}
 		}
 		if (halfEdgePairs_map.find(edge2) != halfEdgePairs_map.end()) {
@@ -298,16 +304,16 @@ private:
 					loadFacet(v1, v2, v3);
 					flag = true;
 				}
-				halfEdge_map[make_pair(v2, v3)].pair = &halfEdge_map[make_pair(a1, a2)];
-				halfEdge_map[make_pair(a1, a2)].pair = &halfEdge_map[make_pair(v2, v3)];
+				halfEdge_map[make_pair(v2, v3)].pairEdge = make_pair(a1, a2);
+				halfEdge_map[make_pair(a1, a2)].pairEdge = make_pair(v2, v3);
 			}
 			else {
 				if (!flag) {
 					loadFacet(v2, v1, v3);
 					flag = true;
 				}
-				halfEdge_map[make_pair(v3, v2)].pair = &halfEdge_map[make_pair(a1, a2)];
-				halfEdge_map[make_pair(a1, a2)].pair = &halfEdge_map[make_pair(v3, v2)];
+				halfEdge_map[make_pair(v3, v2)].pairEdge = make_pair(a1, a2);
+				halfEdge_map[make_pair(a1, a2)].pairEdge = make_pair(v3, v2);
 			}
 		}
 		if (halfEdgePairs_map.find(edge3) != halfEdgePairs_map.end()) {
@@ -319,16 +325,16 @@ private:
 					loadFacet(v1, v2, v3);
 					flag = true;
 				}
-				halfEdge_map[make_pair(v3, v1)].pair = &halfEdge_map[make_pair(a1, a2)];
-				halfEdge_map[make_pair(a1, a2)].pair = &halfEdge_map[make_pair(v3, v1)];
+				halfEdge_map[make_pair(v3, v1)].pairEdge = make_pair(a1, a2);
+				halfEdge_map[make_pair(a1, a2)].pairEdge = make_pair(v3, v1);
 			}
 			else {
 				if (!flag) {
 					loadFacet(v2, v1, v3);
 					flag = true;
 				}
-				halfEdge_map[make_pair(v1, v3)].pair = &halfEdge_map[make_pair(a1, a2)];
-				halfEdge_map[make_pair(a1, a2)].pair = &halfEdge_map[make_pair(v1, v3)];
+				halfEdge_map[make_pair(v1, v3)].pairEdge = make_pair(a1, a2);
+				halfEdge_map[make_pair(a1, a2)].pairEdge = make_pair(v1, v3);
 			}
 		}
 		return flag;

@@ -9,7 +9,7 @@ class Face
 {
 public:
 
-	Face(HalfEdge* halfedge)
+	Face(pair<int, int> halfedge)
 	{
 	}
 
@@ -17,7 +17,7 @@ public:
 	{
 	}
 
-	HalfEdge* corHalfEdge;
+	pair<int, int> corHalfEdge;
 
 };
 

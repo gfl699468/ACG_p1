@@ -3,7 +3,8 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
 	panel.setup();
-	panel.add(openFileButton.setup("open"));
+	panel.add(openFileButton.setup("open Model file"));
+	panel.add(drawModel.setup("draw Model", false));
 	openFileButton.addListener(this, &ofApp::openFileButtonPressed);
 }
 
@@ -76,6 +77,14 @@ void ofApp::openFileButtonPressed() {
 	ofFileDialogResult result = ofSystemLoadDialog("Load VRML file");
 	if (result.bSuccess) {
 		string path = result.getPath();
-		a.loadVRMLFile(path);
+		reader.loadVRMLFile(path);
 	}
+}
+
+void ofApp::loopSubdivisionPressed()
+{
+}
+
+void ofApp::modifiedButterflySubdivisionPressed()
+{
 }
