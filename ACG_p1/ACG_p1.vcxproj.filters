@@ -45,6 +45,9 @@
     <Filter Include="addons\ofxGui\src">
       <UniqueIdentifier>{8f67d7c0-8a8c-464e-8b5c-479d30cc3a6b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\halfedge">
+      <UniqueIdentifier>{9eac1cb1-f952-44e8-81fa-034b9be2f921}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ofApp.h">
@@ -76,6 +79,18 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\of_v0.9.6_vs_release\addons\ofxGui\src\ofxToggle.h">
       <Filter>addons\ofxGui\src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Reader.h">
+      <Filter>src\halfedge</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Vertex.h">
+      <Filter>src\halfedge</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Face.h">
+      <Filter>src\halfedge</Filter>
+    </ClInclude>
+    <ClInclude Include="src\HalfEdge.h">
+      <Filter>src\halfedge</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

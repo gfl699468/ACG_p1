@@ -200,7 +200,11 @@ C:\Users\gfl69\Documents\of_v0.9.6_vs_release\addons\ofxGui\src;%(AdditionalIncl
     <ClInclude Include="..\..\..\..\of_v0.9.6_vs_release\addons\ofxGui\src\ofxSlider.h" />
     <ClInclude Include="..\..\..\..\of_v0.9.6_vs_release\addons\ofxGui\src\ofxSliderGroup.h" />
     <ClInclude Include="..\..\..\..\of_v0.9.6_vs_release\addons\ofxGui\src\ofxToggle.h" />
+    <ClInclude Include="src\Face.h" />
+    <ClInclude Include="src\HalfEdge.h" />
     <ClInclude Include="src\ofApp.h" />
+    <ClInclude Include="src\Reader.h" />
+    <ClInclude Include="src\Vertex.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(OF_ROOT)\libs\openFrameworksCompiled\project\vs\openframeworksLib.vcxproj">

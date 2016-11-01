@@ -1,9 +1,12 @@
 #pragma once
 
 #include "ofMain.h"
-
+#include <ofxGui.h>
+#include "Reader.h"
 class ofApp : public ofBaseApp{
-
+	ofxPanel panel;
+	ofxButton openFileButton;
+	Reader a = Reader();
 	public:
 		void setup();
 		void update();
@@ -20,5 +23,5 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-		
+		void openFileButtonPressed();	
 };

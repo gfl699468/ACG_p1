@@ -2,7 +2,9 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-
+	panel.setup();
+	panel.add(openFileButton.setup("open"));
+	openFileButton.addListener(this, &ofApp::openFileButtonPressed);
 }
 
 //--------------------------------------------------------------
@@ -12,7 +14,7 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-
+	panel.draw();
 }
 
 //--------------------------------------------------------------
@@ -68,4 +70,12 @@ void ofApp::gotMessage(ofMessage msg){
 //--------------------------------------------------------------
 void ofApp::dragEvent(ofDragInfo dragInfo){ 
 
+}
+
+void ofApp::openFileButtonPressed() {
+	ofFileDialogResult result = ofSystemLoadDialog("Load VRML file");
+	if (result.bSuccess) {
+		string path = result.getPath();
+		a.loadVRMLFile(path);
+	}
 }
