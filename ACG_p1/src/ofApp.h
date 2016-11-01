@@ -12,8 +12,10 @@ class ofApp : public ofBaseApp{
 	Reader reader = Reader();
 
 	map<pair<int, int>, HalfEdge> halfEdge_map;
-	vector<Vertex> vertex;
-	vector<Face> face;
+	map<int, Vertex> vertex;
+	map<int, Face> face;
+	ofVboMesh mesh;
+
 	public:
 		void setup();
 		void update();
@@ -31,7 +33,7 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 		void openFileButtonPressed();
-		void loopSubdivisionPressed();
-		void modifiedButterflySubdivisionPressed();
-		
+		void loopSubdivisionButtonPressed();
+		void modifiedButterflySubdivisionButtonPressed();
+		void updateModelvbo();
 };

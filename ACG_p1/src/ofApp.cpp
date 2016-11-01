@@ -1,5 +1,5 @@
 #include "ofApp.h"
-
+using namespace std;
 //--------------------------------------------------------------
 void ofApp::setup(){
 	panel.setup();
@@ -16,6 +16,15 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
 	panel.draw();
+	if (drawModel) {
+		if (halfEdge_map.size() != 0) {
+
+		}
+		else {
+			ofSystemAlertDialog("Please load model file first!");
+			drawModel = false;
+		}
+	}
 }
 
 //--------------------------------------------------------------
@@ -78,13 +87,32 @@ void ofApp::openFileButtonPressed() {
 	if (result.bSuccess) {
 		string path = result.getPath();
 		reader.loadVRMLFile(path);
+		this->halfEdge_map = reader.halfEdge_map;
+		this->vertex = reader.vertex;
+		this->face = reader.face;
+
 	}
 }
 
-void ofApp::loopSubdivisionPressed()
+void ofApp::loopSubdivisionButtonPressed()
 {
 }
 
-void ofApp::modifiedButterflySubdivisionPressed()
+void ofApp::modifiedButterflySubdivisionButtonPressed()
 {
+}
+
+void ofApp::updateModelvbo()
+{
+	for (size_t i = 0; i < vertex.size(); i++)
+	{
+		mesh.addVertex(ofVec3f(vertex[i].x, vertex[i].y, vertex[i].z));
+	}
+	for (size_t i = 0; i < face.size(); i++)
+	{
+
+		mesh.addIndex(halfEdge_map[face[i].corHalfEdge].oriVertex);
+		mesh.addIndex(halfEdge_map[halfEdge_map[face[i].corHalfEdge].nextHalfEdge].oriVertex);
+		mesh.addIndex(halfEdge_map[halfEdge_map[face[i].corHalfEdge].prevHalfEdge].oriVertex);
+	}
 }

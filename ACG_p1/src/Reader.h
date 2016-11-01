@@ -15,12 +15,8 @@ class Reader
 {
 
 private:
-
-	map<pair<int, int>, HalfEdge> halfEdge_map;
 	map<pair<int, int>, HalfEdge> halfEdgePairs_map;
 	vector<tuple<int, int, int>> facet;
-	map<int, Vertex> vertex;
-	map<int, Face> face;
 
 	regex comment = regex("^#.+|#");
 	regex shape_begin = regex("^[[:space:]]*Shape[[:space:]]*[{]", regex_constants::extended);
@@ -342,6 +338,11 @@ private:
 
 
 public:
+
+	map<pair<int, int>, HalfEdge> halfEdge_map;
+	map<int, Vertex> vertex;
+	map<int, Face> face;
+
 	inline void loadVRMLFile(string fileName) {
 		ifstream fs(fileName, fstream::in);
 		vector<string> context;
