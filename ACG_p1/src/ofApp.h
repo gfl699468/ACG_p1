@@ -7,14 +7,18 @@ class ofApp : public ofBaseApp{
 	ofxPanel panel;
 	ofxButton openFileButton;
 	ofxToggle drawModel;
+	ofxFloatSlider modelScale;
+	ofxVec3Slider lightPos;
 	ofxButton loopSubdivisionButton;
 	ofxButton modifiedButterflySubdivisionButton;
-	Reader reader = Reader();
+	Reader reader;
 
 	map<pair<int, int>, HalfEdge> halfEdge_map;
 	map<int, Vertex> vertex;
 	map<int, Face> face;
 	ofVboMesh mesh;
+	ofEasyCam cam;
+	ofLight light;
 
 	public:
 		void setup();
@@ -36,4 +40,7 @@ class ofApp : public ofBaseApp{
 		void loopSubdivisionButtonPressed();
 		void modifiedButterflySubdivisionButtonPressed();
 		void updateModelvbo();
+		void calcNormals();
+		tuple<double, double, double> calcFaceNormal(int i);
+		ofVec3f calcPointNormal(int i);
 };

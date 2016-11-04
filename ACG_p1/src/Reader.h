@@ -28,7 +28,7 @@ private:
 	regex end = regex("[[:space:]]*[}][[:space:]]*", regex_constants::extended);
 
 	inline void checkPoint(ifstream* fs) {
-		regex pattern = regex("^[[:space:]]*[-]?[0-9]+(\.[0-9]+)?[[:space:]]+[-]?[0-9]+(\.[0-9]+)?[[:space:]]+[-]?[0-9]+(\.[0-9]+)?[[:space:]]*$", regex_constants::extended);
+		regex pattern = regex("^[[:space:]]*(([-]?[0-9]+(\.[0-9]+)?)|([-]?[0-9]+(\.[0-9]+)?e[-]?[0-9]+))[[:space:]]+(([-]?[0-9]+(\.[0-9]+)?)|([-]?[0-9]+(\.[0-9]+)?e[-]?[0-9]+))[[:space:]]+(([-]?[0-9]+(\.[0-9]+)?)|([-]?[0-9]+(\.[0-9]+)?e[-]?[0-9]+))[[:space:]]*$", regex_constants::extended);
 		string tmp;
 		int pos;
 		while (!fs->eof())
@@ -240,7 +240,7 @@ private:
 		edge2.ori = v2;
 		edge2.dest = v3;
 		edge3.ori = v3;
-		edge3.dest = v2;
+		edge3.dest = v1;
 		halfEdge_map[make_pair(v1, v2)] = edge1;
 		halfEdge_map[make_pair(v2, v3)] = edge2;
 		halfEdge_map[make_pair(v3, v1)] = edge3;
