@@ -281,7 +281,7 @@ void ofApp::loopSubdivisionButtonPressed()
 	{
 		auto pos = make_tuple(0.0, 0.0, 0.0);
 		auto o = tmp_vertex[i].nextHalfEdge;
-		auto n = o;//new_halfEdge_map[new_halfEdge_map[o].prevHalfEdge].pairEdge;
+		auto n = o;
 		do {
 			auto p = new_halfEdge_map[new_halfEdge_map[n].nextHalfEdge].oriVertex;
 			if (p < tmp_vertex.size() - new_vertex_size) {
@@ -295,6 +295,7 @@ void ofApp::loopSubdivisionButtonPressed()
 					pos += (1 / 8)*tmp_vertex[np].pos;
 				}
 			}
+			n = new_halfEdge_map[new_halfEdge_map[o].prevHalfEdge].pairEdge;
 		} while (o != n);
 		tmp_vertex[i].pos = pos;
 	}
