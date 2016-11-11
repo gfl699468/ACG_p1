@@ -7,7 +7,10 @@ std::tuple<double, double, double>& operator+(std::tuple<double, double, double>
 };
 
 std::tuple<double, double, double>& operator+=(std::tuple<double, double, double>& lhs, const std::tuple<double, double, double>& rhs) {
-	return make_tuple(get<0>(lhs) + get<0>(rhs), get<1>(lhs) + get<1>(rhs), get<2>(lhs) + get<2>(rhs));
+	get<0>(lhs) += get<0>(rhs);
+	get<1>(lhs) += get<1>(rhs);
+	get<2>(lhs) += get<2>(rhs);
+	return lhs;
 };
 
 std::tuple<double, double, double>& operator*(const double& lhs, std::tuple<double, double, double>& rhs) {
@@ -267,7 +270,7 @@ void ofApp::loopSubdivisionButtonPressed()
 
 	//Finished construct the halfedge, begin to adjust the vertices.
 
-	auto new_vertex_size = new_halfEdge_map.size() / 4;
+	auto new_vertex_size = halfEdge_map.size() / 2;
 	//adjust the pos of new vertex
 	//       /\ P2
 	//      /__\
@@ -285,17 +288,17 @@ void ofApp::loopSubdivisionButtonPressed()
 		do {
 			auto p = new_halfEdge_map[new_halfEdge_map[n].nextHalfEdge].oriVertex;
 			if (p < tmp_vertex.size() - new_vertex_size) {
-				pos += (3 / 8)*tmp_vertex[p].pos;
+				pos += (3.0 / 8.0)*tmp_vertex[p].pos;
 			}
 			else {
 				auto next_p = new_halfEdge_map[new_halfEdge_map[new_halfEdge_map[n].nextHalfEdge].nextHalfEdge].oriVertex;
 				auto edge = new_halfEdge_map[new_halfEdge_map[n].nextHalfEdge].pairEdge;
 				if (next_p >= tmp_vertex.size() - new_vertex_size) {
 					auto np = new_halfEdge_map[new_halfEdge_map[edge].prevHalfEdge].oriVertex;
-					pos += (1 / 8)*tmp_vertex[np].pos;
+					pos += (1.0 / 8.0)*tmp_vertex[np].pos;
 				}
 			}
-			n = new_halfEdge_map[new_halfEdge_map[o].prevHalfEdge].pairEdge;
+			n = new_halfEdge_map[new_halfEdge_map[n].prevHalfEdge].pairEdge;
 		} while (o != n);
 		tmp_vertex[i].pos = pos;
 	}
@@ -322,13 +325,14 @@ void ofApp::loopSubdivisionButtonPressed()
 			auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
 			pos += vertex[p].pos;
 			counter++;
+			n = new_halfEdge_map[new_halfEdge_map[n].prevHalfEdge].pairEdge;
 		} while (o != n);
 		auto beta = 0;
 		if (counter > 3) {
-			beta = (3 / (8 * counter));
+			beta = (3.0 / (8.0 * counter));
 		}
 		else {
-			beta = (3 / 16);
+			beta = (3.0 / 16.0);
 		}
 		tmp_vertex[i].pos = (1 - counter * beta) * tmp_vertex[i].pos + beta * pos;
 	}
