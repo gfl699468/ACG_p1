@@ -300,6 +300,40 @@ void ofApp::loopSubdivisionButtonPressed()
 		tmp_vertex[i].pos = pos;
 	}
 
+
+	//adjust the pos of old vertex
+	//        ________
+	//    P1 /\      /\ P2
+	//      /  \    /  \
+	//     /    \  /    \
+	// P0 /______\/______\ P3
+	//           /\      /
+	//      ... /  \    /
+	//         /    \  /
+	//      Pn/______\/ P4
+
+	for (size_t i = 0; i < vertex.size(); i++)
+	{
+		auto pos = make_tuple(0.0, 0.0, 0.0);
+		auto o = vertex[i].nextHalfEdge;
+		auto n = o;
+		auto counter = 0;
+		do {
+			auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+			pos += vertex[p].pos;
+			counter++;
+		} while (o != n);
+		auto beta = 0;
+		if (counter > 3) {
+			beta = (3 / (8 * counter));
+		}
+		else {
+			beta = (3 / 16);
+		}
+		tmp_vertex[i].pos = (1 - counter * beta) * tmp_vertex[i].pos + beta * pos;
+	}
+
+
 	//replace the original data structure
 	vertex = tmp_vertex;
 	halfEdge_map = new_halfEdge_map;
