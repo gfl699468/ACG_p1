@@ -14,16 +14,25 @@ public:
 
 	Vertex(double x, double y, double z)
 	{
-		this->x = x;
-		this->y = y;
-		this->z = z;
+		pos = make_tuple(x, y, z);
 	}
 
 	~Vertex()
 	{
 	}
 
-	double x, y, z;
+	inline double x() {
+		return get<0>(pos);
+	}
+
+	inline double y() {
+		return get<1>(pos);
+	}
+	
+	inline double z() {
+		return get<2>(pos);
+	}
+	std::tuple<double, double, double> pos;
 	pair<int, int> nextHalfEdge;
 
 };
