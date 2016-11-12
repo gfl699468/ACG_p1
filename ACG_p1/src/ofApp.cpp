@@ -2,7 +2,7 @@
 
 #define nil_pair make_pair(-1, -1)
 
-std::tuple<double, double, double>& operator+(std::tuple<double, double, double>& lhs, std::tuple<double, double, double>& rhs) {
+std::tuple<double, double, double> operator+(std::tuple<double, double, double>& lhs, std::tuple<double, double, double>& rhs) {
 	return make_tuple(get<0>(lhs) + get<0>(rhs), get<1>(lhs)+get<1>(rhs), get<2>(lhs)+get<2>(rhs));
 };
 
@@ -13,7 +13,7 @@ std::tuple<double, double, double>& operator+=(std::tuple<double, double, double
 	return lhs;
 };
 
-std::tuple<double, double, double>& operator*(const double& lhs, std::tuple<double, double, double>& rhs) {
+std::tuple<double, double, double> operator*(const double& lhs, std::tuple<double, double, double>& rhs) {
 	return make_tuple(lhs * get<0>(rhs), lhs * get<1>(rhs), lhs * get<2>(rhs));
 };
 
@@ -30,11 +30,11 @@ void ofApp::setup(){
 	openFileButton.addListener(this, &ofApp::openFileButtonPressed);
 	loopSubdivisionButton.addListener(this, &ofApp::loopSubdivisionButtonPressed);
 	mesh.setMode(OF_PRIMITIVE_TRIANGLES);
-	//ofEnableLighting();
-	//ofEnableSmoothing();
-	//light.enable();
-	//light.setPointLight();
-	//light.setPosition(lightPos);
+	ofEnableLighting();
+	ofEnableSmoothing();
+	light.enable();
+	light.setPointLight();
+	light.setPosition(lightPos);
 
 }
 
@@ -325,16 +325,16 @@ void ofApp::loopSubdivisionButtonPressed()
 			auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
 			pos += vertex[p].pos;
 			counter++;
-			n = new_halfEdge_map[new_halfEdge_map[n].prevHalfEdge].pairEdge;
+			n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
 		} while (o != n);
-		auto beta = 0;
+		auto beta = 0.0;
 		if (counter > 3) {
 			beta = (3.0 / (8.0 * counter));
 		}
 		else {
 			beta = (3.0 / 16.0);
 		}
-		tmp_vertex[i].pos = (1 - counter * beta) * tmp_vertex[i].pos + beta * pos;
+		tmp_vertex[i].pos = (1.0 - counter * beta) * tmp_vertex[i].pos + beta * pos;
 	}
 
 
