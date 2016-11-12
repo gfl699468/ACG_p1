@@ -347,6 +347,145 @@ void ofApp::loopSubdivisionButtonPressed()
 
 void ofApp::modifiedButterflySubdivisionButtonPressed()
 {
+	map<int, Vertex> tmp_vertex = vertex;
+	map<pair<int, int>, HalfEdge> tmp_halfEdge_map = halfEdge_map;
+	map<pair<int, int>, HalfEdge> new_halfEdge_map;
+	map<int, Face> tmp_face = face;
+	map<int, Face> new_face;
+	//split the half edge (and add new vertices)
+	while (tmp_halfEdge_map.size() != 0)
+	{
+		auto he1 = tmp_halfEdge_map.begin()->second;
+		auto he2 = tmp_halfEdge_map[he1.pairEdge];
+		tmp_halfEdge_map.erase(tmp_halfEdge_map.begin());
+		tmp_halfEdge_map.erase(he1.pairEdge);
+		auto v1 = he1.oriVertex;
+		auto v2 = he2.oriVertex;
+		auto vn = tmp_vertex.size();
+		tmp_vertex.insert(make_pair(vn, Vertex()));
+		auto ne1 = make_pair(v1, vn);
+		auto ne2 = make_pair(vn, v2);
+		auto ne3 = make_pair(v2, vn);
+		auto ne4 = make_pair(vn, v1);
+		//add new edge to the new map
+		new_halfEdge_map.insert(make_pair(ne1, HalfEdge()));
+		new_halfEdge_map.insert(make_pair(ne2, HalfEdge()));
+		new_halfEdge_map.insert(make_pair(ne3, HalfEdge()));
+		new_halfEdge_map.insert(make_pair(ne4, HalfEdge()));
+		//add the prev&next edge pointer of the new edges
+		new_halfEdge_map[ne1].nextHalfEdge = ne2;
+		new_halfEdge_map[ne2].nextHalfEdge = he1.nextHalfEdge;
+		new_halfEdge_map[ne3].nextHalfEdge = ne4;
+		new_halfEdge_map[ne4].nextHalfEdge = he2.nextHalfEdge;
+		new_halfEdge_map[ne1].prevHalfEdge = he1.prevHalfEdge;
+		new_halfEdge_map[ne2].prevHalfEdge = ne1;
+		new_halfEdge_map[ne3].prevHalfEdge = he2.prevHalfEdge;
+		new_halfEdge_map[ne4].prevHalfEdge = ne3;
+		//change the prev&next edge pointer of the adjust edges of new edges(in the old map)
+		if (tmp_halfEdge_map.find(he1.prevHalfEdge) != tmp_halfEdge_map.end())
+			tmp_halfEdge_map[he1.prevHalfEdge].nextHalfEdge = ne1;
+		else
+			new_halfEdge_map[he1.prevHalfEdge].nextHalfEdge = ne1;
+		if (tmp_halfEdge_map.find(he1.nextHalfEdge) != tmp_halfEdge_map.end())
+			tmp_halfEdge_map[he1.nextHalfEdge].prevHalfEdge = ne2;
+		else
+			new_halfEdge_map[he1.nextHalfEdge].prevHalfEdge = ne2;
+		if (tmp_halfEdge_map.find(he2.prevHalfEdge) != tmp_halfEdge_map.end())
+			tmp_halfEdge_map[he2.prevHalfEdge].nextHalfEdge = ne3;
+		else
+			new_halfEdge_map[he2.prevHalfEdge].nextHalfEdge = ne3;
+		if (tmp_halfEdge_map.find(he2.nextHalfEdge) != tmp_halfEdge_map.end())
+			tmp_halfEdge_map[he2.nextHalfEdge].prevHalfEdge = ne4;
+		else
+			new_halfEdge_map[he2.nextHalfEdge].prevHalfEdge = ne4;
+
+		//add the face pointer to the new halfedge & change the face's halfedge pointer to the new halfedge(temporary)
+		new_halfEdge_map[ne1].face = he1.face;
+		new_halfEdge_map[ne2].face = he1.face;
+		new_halfEdge_map[ne3].face = he2.face;
+		new_halfEdge_map[ne4].face = he2.face;
+		tmp_face[he1.face].corHalfEdge = ne1;
+		tmp_face[he2.face].corHalfEdge = ne3;
+		//add the halfedge pointer to the new vertices & the vertex pointer to the halfedge
+		tmp_vertex[vn].nextHalfEdge = nil_pair;
+		tmp_vertex[v1].nextHalfEdge = ne1;
+		tmp_vertex[v2].nextHalfEdge = ne3;
+		new_halfEdge_map[ne1].oriVertex = v1;
+		new_halfEdge_map[ne2].oriVertex = vn;
+		new_halfEdge_map[ne3].oriVertex = v2;
+		new_halfEdge_map[ne4].oriVertex = vn;
+		//add the pair pointer to the new halfedge
+		new_halfEdge_map[ne1].pairEdge = ne4;
+		new_halfEdge_map[ne2].pairEdge = ne3;
+		new_halfEdge_map[ne3].pairEdge = ne2;
+		new_halfEdge_map[ne4].pairEdge = ne1;
+	}
+	//add new face & change the face pointer of all halfedge
+	for (size_t i = 0; i < tmp_face.size(); i++)
+	{
+		//reserved center facet index
+		auto cfi = new_face.size();
+		new_face.insert(make_pair(cfi, Face()));
+
+		auto he1 = tmp_face[i].corHalfEdge;
+		auto he2 = new_halfEdge_map[he1].prevHalfEdge;
+		auto next_he1 = new_halfEdge_map[new_halfEdge_map[he1].nextHalfEdge].nextHalfEdge;
+		auto next_he2 = new_halfEdge_map[new_halfEdge_map[he2].nextHalfEdge].nextHalfEdge;
+
+		auto cfp1 = new_halfEdge_map[new_halfEdge_map[he1].nextHalfEdge].oriVertex;
+		auto cfp2 = new_halfEdge_map[he2].oriVertex;
+		auto cfp3 = new_halfEdge_map[new_halfEdge_map[next_he1].nextHalfEdge].oriVertex;
+		new_face[cfi].corHalfEdge = make_pair(cfp2, cfp1);
+		for (size_t j = 0; j < 3; j++)
+		{
+			auto fi = new_face.size();
+			new_face.insert(make_pair(fi, Face()));
+
+			new_face[fi].corHalfEdge = he1;
+			new_halfEdge_map[he1].face = fi;
+			new_halfEdge_map[he2].face = fi;
+			auto p1 = new_halfEdge_map[new_halfEdge_map[he1].nextHalfEdge].oriVertex;
+			auto p2 = new_halfEdge_map[he2].oriVertex;
+			new_halfEdge_map[make_pair(p1, p2)] = HalfEdge();
+			new_halfEdge_map[make_pair(p1, p2)].face = fi;
+			new_halfEdge_map[make_pair(p1, p2)].nextHalfEdge = he2;
+			new_halfEdge_map[make_pair(p1, p2)].prevHalfEdge = he1;
+			new_halfEdge_map[make_pair(p1, p2)].oriVertex = p1;
+			new_halfEdge_map[he1].nextHalfEdge = make_pair(p1, p2);
+			new_halfEdge_map[he2].prevHalfEdge = make_pair(p1, p2);
+			tmp_vertex[p1].nextHalfEdge = make_pair(p1, p2);
+			new_halfEdge_map[make_pair(p1, p2)].pairEdge = make_pair(p2, p1);
+
+			new_halfEdge_map[make_pair(p2, p1)] = HalfEdge();
+			new_halfEdge_map[make_pair(p2, p1)].face = cfi;
+			new_halfEdge_map[make_pair(p2, p1)].pairEdge = make_pair(p1, p2);
+			new_halfEdge_map[make_pair(p2, p1)].oriVertex = p2;
+
+			he1 = next_he1;
+			he2 = next_he2;
+			next_he1 = new_halfEdge_map[new_halfEdge_map[he1].nextHalfEdge].nextHalfEdge;
+			next_he2 = new_halfEdge_map[new_halfEdge_map[he2].nextHalfEdge].nextHalfEdge;
+		}
+
+		new_halfEdge_map[make_pair(cfp1, cfp3)].nextHalfEdge = make_pair(cfp3, cfp2);
+		new_halfEdge_map[make_pair(cfp3, cfp2)].nextHalfEdge = make_pair(cfp2, cfp1);
+		new_halfEdge_map[make_pair(cfp2, cfp1)].nextHalfEdge = make_pair(cfp1, cfp3);
+		new_halfEdge_map[make_pair(cfp1, cfp3)].prevHalfEdge = make_pair(cfp2, cfp1);
+		new_halfEdge_map[make_pair(cfp3, cfp2)].prevHalfEdge = make_pair(cfp1, cfp3);
+		new_halfEdge_map[make_pair(cfp2, cfp1)].prevHalfEdge = make_pair(cfp3, cfp2);
+	}
+
+	//Finished construct the halfedge, begin to adjust the vertices.
+
+	auto new_vertex_size = halfEdge_map.size() / 2;
+	//adjust the pos of new vertex
+
+
+	//replace the original data structure
+	vertex = tmp_vertex;
+	halfEdge_map = new_halfEdge_map;
+	face = new_face;
+	updateModelvbo();
 }
 
 void ofApp::updateModelvbo()
