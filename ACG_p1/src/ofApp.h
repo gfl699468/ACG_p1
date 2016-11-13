@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include <ofxGui.h>
 #include "Reader.h"
+#include <math.h>
 class ofApp : public ofBaseApp{
 	ofxPanel panel;
 	ofxButton openFileButton;

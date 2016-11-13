@@ -6,6 +6,10 @@ std::tuple<double, double, double> operator+(std::tuple<double, double, double>&
 	return make_tuple(get<0>(lhs) + get<0>(rhs), get<1>(lhs)+get<1>(rhs), get<2>(lhs)+get<2>(rhs));
 };
 
+std::tuple<double, double, double> operator-(std::tuple<double, double, double>& lhs, std::tuple<double, double, double>& rhs) {
+	return make_tuple(get<0>(lhs) - get<0>(rhs), get<1>(lhs) - get<1>(rhs), get<2>(lhs) - get<2>(rhs));
+};
+
 std::tuple<double, double, double>& operator+=(std::tuple<double, double, double>& lhs, const std::tuple<double, double, double>& rhs) {
 	get<0>(lhs) += get<0>(rhs);
 	get<1>(lhs) += get<1>(rhs);
@@ -17,6 +21,9 @@ std::tuple<double, double, double> operator*(const double& lhs, std::tuple<doubl
 	return make_tuple(lhs * get<0>(rhs), lhs * get<1>(rhs), lhs * get<2>(rhs));
 };
 
+std::tuple<double, double, double> operator/(std::tuple<double, double, double>& lhs, const double& rhs) {
+	return make_tuple(get<0>(lhs) / rhs, get<1>(lhs) / rhs, get<2>(lhs) / rhs);
+};
 
 using namespace std;
 //--------------------------------------------------------------
@@ -25,10 +32,12 @@ void ofApp::setup(){
 	panel.add(openFileButton.setup("open Model file"));
 	panel.add(drawModel.setup("draw Model", false));
 	panel.add(loopSubdivisionButton.setup("Loop Subdivision"));
+	panel.add(modifiedButterflySubdivisionButton.setup("MB Subdivision"));
 	panel.add(modelScale.setup("Model Scale", 100, 1, 1000));
 	panel.add(lightPos.setup("Light Position", ofVec3f(0, 0, 100), ofVec3f(-100, -100, -100), ofVec3f(100, 100, 100)));
 	openFileButton.addListener(this, &ofApp::openFileButtonPressed);
 	loopSubdivisionButton.addListener(this, &ofApp::loopSubdivisionButtonPressed);
+	modifiedButterflySubdivisionButton.addListener(this, &ofApp::modifiedButterflySubdivisionButtonPressed);
 	mesh.setMode(OF_PRIMITIVE_TRIANGLES);
 	ofEnableLighting();
 	ofEnableSmoothing();
@@ -478,8 +487,233 @@ void ofApp::modifiedButterflySubdivisionButtonPressed()
 	//Finished construct the halfedge, begin to adjust the vertices.
 
 	auto new_vertex_size = halfEdge_map.size() / 2;
+	
 	//adjust the pos of new vertex
 
+	//calc all vertex's valence
+	
+	auto valence = map<int, int>();
+
+	for (auto i = halfEdge_map.begin(); i != halfEdge_map.end(); i++)
+	{
+		valence[i->second.oriVertex]++;
+	}
+
+	for (size_t i = tmp_vertex.size() - new_vertex_size; i < tmp_vertex.size(); i++)
+	{
+		auto pa = vector<int>();
+		auto o = tmp_vertex[i].nextHalfEdge;
+		auto n = o;
+		auto counter = 0;
+		do {
+			auto p = new_halfEdge_map[new_halfEdge_map[n].nextHalfEdge].oriVertex;
+			if (p < tmp_vertex.size() - new_vertex_size) {
+				pa.push_back(p);
+			}
+			n = new_halfEdge_map[new_halfEdge_map[n].prevHalfEdge].pairEdge;
+		} while (o != n);
+		//op_p3  op_p1 op_p4
+		//   ____________
+		//   \ e3 /\ e4 /
+		//    \  /e1\  /
+		//     \/____\/
+		//pa[0]/\ e2 /\pa[1]    
+		//    /e5\  /e6\
+		//   /____\/____\
+		// op_p5 op_p2 op_p6
+		//
+		//case 1
+		if ((valence[pa[0]]+valence[pa[1]] == 12)&(valence[pa[0]] == 6)) {
+			auto e1 = make_pair(pa[0], pa[1]);
+			auto e2 = make_pair(pa[1], pa[0]);
+			auto op_p1 = halfEdge_map[halfEdge_map[e1].prevHalfEdge].oriVertex;
+			auto op_p2 = halfEdge_map[halfEdge_map[e2].prevHalfEdge].oriVertex;
+			auto e3 = make_pair(pa[0], op_p1);
+			auto e4 = make_pair(op_p1, pa[1]);
+			auto op_p3 = halfEdge_map[halfEdge_map[e3].prevHalfEdge].oriVertex;
+			auto op_p4 = halfEdge_map[halfEdge_map[e4].prevHalfEdge].oriVertex;
+			auto e5 = make_pair(op_p2, pa[0]);
+			auto e6 = make_pair(pa[1], op_p2);
+			auto op_p5 = halfEdge_map[halfEdge_map[e5].prevHalfEdge].oriVertex;
+			auto op_p6 = halfEdge_map[halfEdge_map[e6].prevHalfEdge].oriVertex;
+
+			auto case_1_pos = (1. / 2.) * (tmp_vertex[pa[0]].pos + tmp_vertex[pa[1]].pos);
+			auto case_2_pos = (1. / 8.) * (tmp_vertex[op_p1].pos + tmp_vertex[op_p2].pos);
+			auto case_3_pos = (1. / 16.) * (tmp_vertex[op_p3].pos + tmp_vertex[op_p4].pos + tmp_vertex[op_p5].pos + tmp_vertex[op_p6].pos);
+			tmp_vertex[i].pos = case_1_pos + case_2_pos - case_3_pos;
+		}
+		//case 2(a)
+		if ((valence[pa[0]] + valence[pa[1]] != 12)&(valence[pa[0]] == 6)) {
+			auto o = make_pair(pa[1], pa[0]);
+			auto n = o;
+			auto pos = (3. / 4.) * tmp_vertex[pa[1]].pos;
+
+			if (valence[pa[1]] >= 5)
+			{
+				auto counter = 0.;
+				do
+				{
+					auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+					auto coeff = (1. / valence[pa[1]])*((1. / 4.) + cos(2. * counter*PI / valence[pa[1]]) + (1. / 2.)*(cos(4. * counter*PI / valence[pa[1]])));
+					pos += coeff*tmp_vertex[p].pos;
+					n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+					counter++;
+				} while (o != n);
+			}
+			if (valence[pa[1]] == 4) {
+				double coeffs[4] = {3. / 8., 0, -1. / 8., 0};
+				auto counter = 0;
+				do
+				{
+					auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+					auto coeff = coeffs[counter];
+					pos += coeff*tmp_vertex[p].pos;
+					n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+					counter++;
+				} while (o != n);
+			}
+			if (valence[pa[1]] == 3) {
+				double coeffs[3] = { 5. / 12., -1. / 12., -1. / 12. };
+				auto counter = 0;
+				do
+				{
+					auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+					auto coeff = coeffs[counter];
+					pos += coeff*tmp_vertex[p].pos;
+					n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+					counter++;
+				} while (o != n);
+			}
+			tmp_vertex[i].pos = pos;
+		}
+		//case 2(b)
+		if ((valence[pa[0]] + valence[pa[1]] != 12)&(valence[pa[1]] == 6)) {
+			auto o = make_pair(pa[0], pa[1]);
+			auto n = o;
+			auto pos = (3. / 4.) * tmp_vertex[pa[0]].pos;
+
+			if (valence[pa[0]] >= 5)
+			{
+				do
+				{
+					auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+					auto coeff = (1. / valence[pa[0]])*((1. / 4.) + cos(2. * counter*PI / valence[pa[0]]) + (1. / 2.)*(cos(4. * counter*PI / valence[pa[0]])));
+					pos += coeff*tmp_vertex[p].pos;
+					n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+					counter++;
+				} while (o != n);
+			}
+			if (valence[pa[0]] == 4) {
+				double coeffs[4] = { 3. / 8., 0, -1. / 8., 0 };
+				auto counter = 0;
+				do
+				{
+					auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+					auto coeff = coeffs[counter];
+					pos += coeff*tmp_vertex[p].pos;
+					n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+					counter++;
+				} while (o != n);
+			}
+			if (valence[pa[0]] == 3) {
+				double coeffs[3] = { 5. / 12., -1. / 12., -1. / 12. };
+				auto counter = 0;
+				do
+				{
+					auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+					auto coeff = coeffs[counter];
+					pos += coeff*tmp_vertex[p].pos;
+					n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+					counter++;
+				} while (o != n);
+			}
+			tmp_vertex[i].pos = pos;
+		}
+		//case 3
+		if ((valence[pa[0]] != 6)&(valence[pa[1]] != 6)) {
+			auto o = make_pair(pa[0], pa[1]);
+			auto n = o;
+			auto pos = (3. / 4.) * tmp_vertex[pa[0]].pos + (3. / 4.) * tmp_vertex[pa[1]].pos;
+			
+			if (valence[pa[0]] >= 5)
+			{
+				auto counter = 0.;
+				do
+				{
+					auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+					auto coeff = (1. / valence[pa[0]])*((1. / 4.) + cos(2. * counter*PI / valence[pa[0]]) + (1. / 2.)*(cos(4. * counter*PI / valence[pa[0]])));
+					auto t = cos(PI);
+					pos += coeff*tmp_vertex[p].pos;
+					n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+					counter++;
+				} while (o != n);
+			}
+			if (valence[pa[0]] == 4) {
+				double coeffs[4] = { 3. / 8., 0, -1. / 8., 0 };
+				auto counter = 0;
+				do
+				{
+					auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+					auto coeff = coeffs[counter];
+					pos += coeff*tmp_vertex[p].pos;
+					n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+					counter++;
+				} while (o != n);
+			}
+			if (valence[pa[0]] == 3) {
+				double coeffs[3] = { 5. / 12., -1. / 12., -1. / 12. };
+				auto counter = 0;
+				do
+				{
+					auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+					auto coeff = coeffs[counter];
+					pos += coeff*tmp_vertex[p].pos;
+					n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+					counter++;
+				} while (o != n);
+			}
+
+			o = make_pair(pa[1], pa[0]);
+			n = o;
+			if (valence[pa[1]] >= 5)
+			{
+				auto counter = 0.;
+				do
+				{
+					auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+					auto coeff = (1. / valence[pa[1]])*((1. / 4.) + cos(2. * counter*PI / valence[pa[1]]) + (1. / 2.)*(cos(4. * counter*PI / valence[pa[1]])));
+					pos += coeff*tmp_vertex[p].pos;
+					n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+					counter++;
+				} while (o != n);
+			}
+			if (valence[pa[1]] == 4) {
+				double coeffs[4] = { 3. / 8., 0, -1. / 8., 0 };
+				auto counter = 0;
+				do
+				{
+					auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+					auto coeff = coeffs[counter];
+					pos += coeff*tmp_vertex[p].pos;
+					n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+					counter++;
+				} while (o != n);
+			}
+			if (valence[pa[1]] == 3) {
+				double coeffs[3] = { 5. / 12., -1. / 12., -1. / 12. };
+				auto counter = 0;
+				do
+				{
+					auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+					auto coeff = coeffs[counter];
+					pos += coeff*tmp_vertex[p].pos;
+					n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+					counter++;
+				} while (o != n);
+			}
+			tmp_vertex[i].pos = pos / 2;
+		}
+	}
 
 	//replace the original data structure
 	vertex = tmp_vertex;
