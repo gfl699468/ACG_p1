@@ -8,6 +8,7 @@ class ofApp : public ofBaseApp{
 	ofxPanel panel;
 	ofxButton openFileButton;
 	ofxToggle drawModel;
+	ofxToggle drawWireFrame;
 	ofxFloatSlider modelScale;
 	ofxVec3Slider lightPos;
 	ofxButton loopSubdivisionButton;
@@ -20,6 +21,7 @@ class ofApp : public ofBaseApp{
 	ofVboMesh mesh;
 	ofEasyCam cam;
 	ofLight light;
+	ofLight ambientLight;
 
 	public:
 		void setup();
@@ -44,4 +46,7 @@ class ofApp : public ofBaseApp{
 		void calcNormals();
 		tuple<double, double, double> calcFaceNormal(int i);
 		ofVec3f calcPointNormal(int i);
+
+		void drawModelToggled(bool & inval);
+		void drawWireFrameToggled(bool & inval);
 };

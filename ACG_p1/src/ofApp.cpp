@@ -31,18 +31,29 @@ void ofApp::setup(){
 	panel.setup();
 	panel.add(openFileButton.setup("open Model file"));
 	panel.add(drawModel.setup("draw Model", false));
+	panel.add(drawWireFrame.setup("draw WireFrame", false));
 	panel.add(loopSubdivisionButton.setup("Loop Subdivision"));
 	panel.add(modifiedButterflySubdivisionButton.setup("MB Subdivision"));
 	panel.add(modelScale.setup("Model Scale", 100, 1, 1000));
 	panel.add(lightPos.setup("Light Position", ofVec3f(0, 0, 100), ofVec3f(-100, -100, -100), ofVec3f(100, 100, 100)));
+	
 	openFileButton.addListener(this, &ofApp::openFileButtonPressed);
+	
 	loopSubdivisionButton.addListener(this, &ofApp::loopSubdivisionButtonPressed);
+	
 	modifiedButterflySubdivisionButton.addListener(this, &ofApp::modifiedButterflySubdivisionButtonPressed);
+
+	drawModel.addListener(this, &ofApp::drawModelToggled);
+	
+	drawWireFrame.addListener(this, &ofApp::drawWireFrameToggled);
+	
 	mesh.setMode(OF_PRIMITIVE_TRIANGLES);
 	ofEnableLighting();
 	ofEnableSmoothing();
 	light.enable();
 	light.setPointLight();
+	ambientLight.enable();
+	ambientLight.setAmbientColor(ofFloatColor(0.2,0.2,0.2,0.2));
 	light.setPosition(lightPos);
 
 }
@@ -66,6 +77,15 @@ void ofApp::draw(){
 	if (drawModel) {
 		if (halfEdge_map.size() != 0) {
 			mesh.draw();
+		}
+		else {
+			ofSystemAlertDialog("Please load model file first!");
+			drawModel = false;
+		}
+	}
+	else if (drawWireFrame) {
+		if (halfEdge_map.size() != 0) {
+			mesh.drawWireframe();
 		}
 		else {
 			ofSystemAlertDialog("Please load model file first!");
@@ -780,4 +800,33 @@ ofVec3f ofApp::calcPointNormal(int i) {
 	}
 	pn = pn.getNormalized();
 	return pn;
+}
+
+void ofApp::drawModelToggled(bool & inval)
+{
+	if (inval) {
+		if (drawWireFrame) {
+			drawWireFrame = false;
+			drawModel = true;
+		}
+		else
+		{
+			drawModel = true;
+		}
+	}
+	
+}
+
+void ofApp::drawWireFrameToggled(bool & inval)
+{
+	if (inval) {
+		if (drawModel) {
+			drawModel = false;
+			drawWireFrame = true;
+		}
+		else
+		{
+			drawWireFrame = true;
+		}
+	}
 }
