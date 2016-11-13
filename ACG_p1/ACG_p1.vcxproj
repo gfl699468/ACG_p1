@@ -205,6 +205,7 @@ C:\Users\gfl69\Documents\of_v0.9.6_vs_release\addons\ofxGui\src;%(AdditionalIncl
     <ClInclude Include="src\ofApp.h" />
     <ClInclude Include="src\Reader.h" />
     <ClInclude Include="src\Vertex.h" />
+    <ClInclude Include="src\Writer.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(OF_ROOT)\libs\openFrameworksCompiled\project\vs\openframeworksLib.vcxproj">

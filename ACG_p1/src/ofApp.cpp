@@ -30,6 +30,7 @@ using namespace std;
 void ofApp::setup(){
 	panel.setup();
 	panel.add(openFileButton.setup("open Model file"));
+	panel.add(saveFileButton.setup("save Model file"));
 	panel.add(drawModel.setup("draw Model", false));
 	panel.add(drawWireFrame.setup("draw WireFrame", false));
 	panel.add(loopSubdivisionButton.setup("Loop Subdivision"));
@@ -38,7 +39,8 @@ void ofApp::setup(){
 	panel.add(lightPos.setup("Light Position", ofVec3f(0, 0, 100), ofVec3f(-100, -100, -100), ofVec3f(100, 100, 100)));
 	
 	openFileButton.addListener(this, &ofApp::openFileButtonPressed);
-	
+	saveFileButton.addListener(this, &ofApp::saveFileButtonPressed);
+
 	loopSubdivisionButton.addListener(this, &ofApp::loopSubdivisionButtonPressed);
 	
 	modifiedButterflySubdivisionButton.addListener(this, &ofApp::modifiedButterflySubdivisionButtonPressed);
@@ -163,7 +165,16 @@ void ofApp::openFileButtonPressed() {
 		this->vertex = reader.vertex;
 		this->face = reader.face;
 		updateModelvbo();
+	}
+}
 
+void ofApp::saveFileButtonPressed()
+{
+	writer = Writer();
+	ofFileDialogResult result = ofSystemSaveDialog("Untitled.wrl", "Save VRML file");
+	if (result.bSuccess) {
+		string path = result.getPath();
+		writer.writeVRMLFile(path, halfEdge_map, vertex, face);
 	}
 }
 

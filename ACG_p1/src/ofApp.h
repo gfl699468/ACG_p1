@@ -3,10 +3,13 @@
 #include "ofMain.h"
 #include <ofxGui.h>
 #include "Reader.h"
+#include "Writer.h"
 #include <math.h>
+
 class ofApp : public ofBaseApp{
 	ofxPanel panel;
 	ofxButton openFileButton;
+	ofxButton saveFileButton;
 	ofxToggle drawModel;
 	ofxToggle drawWireFrame;
 	ofxFloatSlider modelScale;
@@ -14,6 +17,7 @@ class ofApp : public ofBaseApp{
 	ofxButton loopSubdivisionButton;
 	ofxButton modifiedButterflySubdivisionButton;
 	Reader reader;
+	Writer writer;
 
 	map<pair<int, int>, HalfEdge> halfEdge_map;
 	map<int, Vertex> vertex;
@@ -40,6 +44,8 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 		void openFileButtonPressed();
+		void saveFileButtonPressed();
+
 		void loopSubdivisionButtonPressed();
 		void modifiedButterflySubdivisionButtonPressed();
 		void updateModelvbo();

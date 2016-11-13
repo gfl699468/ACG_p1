@@ -92,6 +92,9 @@
     <ClInclude Include="src\HalfEdge.h">
       <Filter>src\halfedge</Filter>
     </ClInclude>
+    <ClInclude Include="src\Writer.h">
+      <Filter>src\halfedge</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="icon.rc" />

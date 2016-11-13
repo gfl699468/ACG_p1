@@ -344,7 +344,7 @@ public:
 	map<int, Face> face;
 
 	inline void loadVRMLFile(string fileName) {
-		ifstream fs(fileName, fstream::in);
+		ifstream fs(fileName);
 		vector<string> context;
 		checkShape(&fs);
 		auto first_facet = facet[0];
