@@ -53,6 +53,8 @@ class ofApp : public ofBaseApp{
 		tuple<double, double, double> calcFaceNormal(int i);
 		ofVec3f calcPointNormal(int i);
 
+		void reconstructHalfEdge(map<pair<int, int>, HalfEdge> &halfEdge_map, map<int, Vertex> &vertex, map<int, Face> &face, map<int, Vertex> &tmp_vertex, map<pair<int, int>, HalfEdge> &new_halfEdge_map, map<int, Face> &new_face);
+
 		void drawModelToggled(bool & inval);
 		void drawWireFrameToggled(bool & inval);
 };

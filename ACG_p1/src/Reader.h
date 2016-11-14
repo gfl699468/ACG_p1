@@ -11,6 +11,9 @@
 #include <iostream>
 using namespace std;
 
+
+#define nil_pair make_pair(-1, -1)
+
 class Reader
 {
 
@@ -359,6 +362,14 @@ public:
 				if (checkFacet(get<0>(facet[i]), get<1>(facet[i]), get<2>(facet[i]))) {
 					facet.erase(facet.begin() + i);
 				}
+			}
+		}
+		for (auto i = halfEdge_map.begin(); i != halfEdge_map.end(); i++)
+		{
+			if (i->second.oriVertex == -1) {
+				halfEdge_map[i->second.pairEdge].pairEdge = nil_pair;
+				halfEdge_map.erase(i);
+				i = halfEdge_map.begin();
 			}
 		}
 	}
