@@ -36,7 +36,7 @@ void ofApp::setup() {
 	panel.add(loopSubdivisionButton.setup("Loop Subdivision"));
 	panel.add(modifiedButterflySubdivisionButton.setup("MB Subdivision"));
 	panel.add(modelScale.setup("Model Scale", 100, 1, 1000));
-	panel.add(lightPos.setup("Light Position", ofVec3f(0, 0, 100), ofVec3f(-100, -100, -100), ofVec3f(100, 100, 100)));
+	panel.add(lightPos.setup("Light Position", ofVec3f(-100, -100, 100), ofVec3f(-100, -100, -100), ofVec3f(100, 100, 100)));
 
 	openFileButton.addListener(this, &ofApp::openFileButtonPressed);
 	saveFileButton.addListener(this, &ofApp::saveFileButtonPressed);
@@ -53,9 +53,9 @@ void ofApp::setup() {
 	ofEnableLighting();
 	ofEnableSmoothing();
 	light.enable();
-	light.setPointLight();
+	light.setPointLight();	
 	ambientLight.enable();
-	ambientLight.setAmbientColor(ofFloatColor(0.2, 0.2, 0.2, 0.2));
+	ambientLight.setAmbientColor(ofFloatColor(0.2, 0.2, 0.2, 1));
 	light.setPosition(lightPos);
 
 }
@@ -68,10 +68,11 @@ void ofApp::update() {
 //--------------------------------------------------------------
 void ofApp::draw() {
 	light.setPosition(lightPos);
+
 	ofBackgroundGradient(ofColor(64), ofColor(0));
 	cam.begin();
 	ofEnableDepthTest();
-
+	light.draw();
 	//ofRotateY(ofGetElapsedTimef() * 30);
 
 	ofScale(1, -1, 1);
@@ -79,6 +80,7 @@ void ofApp::draw() {
 	if (drawModel) {
 		if (halfEdge_map.size() != 0) {
 			mesh.draw();
+
 		}
 		else {
 			ofSystemAlertDialog("Please load model file first!");
@@ -368,8 +370,8 @@ void ofApp::modifiedButterflySubdivisionButtonPressed()
 	for (auto i = new_halfEdge_map.begin(); i != new_halfEdge_map.end(); i++)
 	{
 		if (i->second.pairEdge == nil_pair) {
-			valence[new_halfEdge_map[i->second.nextHalfEdge].oriVertex] = -(new_halfEdge_map.size() + 1);
-			valence[i->second.oriVertex] = -(new_halfEdge_map.size() + 1);
+			valence[new_halfEdge_map[i->second.nextHalfEdge].oriVertex] += -(new_halfEdge_map.size() + 1);
+			valence[i->second.oriVertex] += -(new_halfEdge_map.size() + 1);
 		}
 		else {
 			valence[i->second.oriVertex]++;
@@ -469,6 +471,8 @@ void ofApp::modifiedButterflySubdivisionButtonPressed()
 			//   /____\/____\
 			// op_p5 op_p2 op_p6
 			//
+			//pa[0] and pa[1] may be the vertex on the boundary edge
+			//
 			//case 1
 			if ((valence[pa[0]] + valence[pa[1]] == 12)&(valence[pa[0]] == 6)) {
 				auto e1 = make_pair(pa[0], pa[1]);
@@ -489,8 +493,11 @@ void ofApp::modifiedButterflySubdivisionButtonPressed()
 				auto case_3_pos = (1. / 16.) * (new_vertex[op_p3].pos + new_vertex[op_p4].pos + new_vertex[op_p5].pos + new_vertex[op_p6].pos);
 				new_vertex[i].pos = case_1_pos + case_2_pos - case_3_pos;
 			}
-			//case 2(a)
-			if ((valence[pa[0]] + valence[pa[1]] != 12)&(valence[pa[0]] == 6)) {
+			//case 2
+			if ((valence[pa[0]] + valence[pa[1]] != 12)&((valence[pa[0]] == 6)^((valence[pa[1]] == 6)))) {
+				if (valence[pa[1]] == 6) {
+					iter_swap(pa.begin(), pa.end()-1);
+				}
 				auto o = make_pair(pa[1], pa[0]);
 				auto n = o;
 				auto pos = (3. / 4.) * new_vertex[pa[1]].pos;
@@ -531,48 +538,61 @@ void ofApp::modifiedButterflySubdivisionButtonPressed()
 						counter++;
 					} while (o != n);
 				}
-				new_vertex[i].pos = pos;
-			}
-			//case 2(b)
-			if ((valence[pa[0]] + valence[pa[1]] != 12)&(valence[pa[1]] == 6)) {
-				auto o = make_pair(pa[0], pa[1]);
-				auto n = o;
-				auto pos = (3. / 4.) * new_vertex[pa[0]].pos;
+				if (valence[pa[1]] < 0) {
+					pair<int, int> n;
+					if (halfEdge_map[o].pairEdge != nil_pair) {
+						n = halfEdge_map[halfEdge_map[o].pairEdge].nextHalfEdge;
+					}
+					else {
+						n = o;
+					}
+					vector<int> ps,ps1;
+					//find one vertex on the boundary edge
+					auto p_n = o;
+					while ((o != n) && (n != nil_pair) && (halfEdge_map[n].pairEdge != nil_pair)) {
+						p_n = n;
+						n = halfEdge_map[halfEdge_map[n].pairEdge].nextHalfEdge;
+					}
+					if (n != nil_pair) { o = n; }
+					else { o = p_n; n = o; }
+					//traverse to another vertex on boundary edge. save all the encountered vertices
+					auto counter = 0.;
+					do
+					{
+						auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+						ps.push_back(p);
+						n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+						counter++;
+					} while ((o != n) && (n != nil_pair) && (halfEdge_map[n].pairEdge != nil_pair));
+					//use the formula from the case that the valence is larger than 4 and not equal to 6
+					auto k = (new_halfEdge_map.size() + 1) * 2 + valence[pa[1]] + 1; // add 1 cause when we calc the valence, two adjust boundary edges will only give one valence to the vertex
+					auto p0 = find(ps.begin(), ps.end(), pa[0]);
+					ps1.insert(ps1.begin(), p0, ps.end());
+					ps1.insert(ps1.end(), ps.begin(), p0);
+					if (k == 3) {
+						double coeffs[3] = { 5. / 12., -1. / 12., -1. / 12. };
+						for (size_t j = 0; j < ps1.size(); j++)
+						{
+							auto coeff = coeffs[j];
+							pos += coeff*vertex[ps1[j]].pos;
+						}
+					}
+					if (k == 4) {
+						double coeffs[4] = { 3. / 8., 0, -1. / 8., 0 };
+						for (size_t j = 0; j < ps1.size(); j++)
+						{
+							auto coeff = coeffs[j];
+							pos += coeff*vertex[ps1[j]].pos;
+						}
+					}
+					if (k >= 5) {
+						for (size_t j = 0; j < ps1.size(); j++)
+						{
+							auto coeff = (1. / k)*((1. / 4.) + cos(2. * j*PI / k) + (1. / 2.)*(cos(4. * j*PI / k)));
+							pos += coeff*vertex[ps1[j]].pos;
+						}
+					}
 
-				if (valence[pa[0]] >= 5)
-				{
-					do
-					{
-						auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
-						auto coeff = (1. / valence[pa[0]])*((1. / 4.) + cos(2. * counter*PI / valence[pa[0]]) + (1. / 2.)*(cos(4. * counter*PI / valence[pa[0]])));
-						pos += coeff*new_vertex[p].pos;
-						n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
-						counter++;
-					} while (o != n);
-				}
-				if (valence[pa[0]] == 4) {
-					double coeffs[4] = { 3. / 8., 0, -1. / 8., 0 };
-					auto counter = 0;
-					do
-					{
-						auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
-						auto coeff = coeffs[counter];
-						pos += coeff*new_vertex[p].pos;
-						n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
-						counter++;
-					} while (o != n);
-				}
-				if (valence[pa[0]] == 3) {
-					double coeffs[3] = { 5. / 12., -1. / 12., -1. / 12. };
-					auto counter = 0;
-					do
-					{
-						auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
-						auto coeff = coeffs[counter];
-						pos += coeff*new_vertex[p].pos;
-						n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
-						counter++;
-					} while (o != n);
 				}
 				new_vertex[i].pos = pos;
 			}
@@ -619,7 +639,62 @@ void ofApp::modifiedButterflySubdivisionButtonPressed()
 						counter++;
 					} while (o != n);
 				}
+				if (valence[pa[0]] < 0) {
+					pair<int, int> n;
+					if (halfEdge_map[o].pairEdge != nil_pair) {
+						n = halfEdge_map[halfEdge_map[o].pairEdge].nextHalfEdge;
+					}
+					else {
+						n = o;
+					}
+					vector<int> ps, ps1;
+					//find one vertex on the boundary edge
+					auto p_n = o;
+					while ((o != n) && (n != nil_pair) && (halfEdge_map[n].pairEdge != nil_pair)) {
+						p_n = n;
+						n = halfEdge_map[halfEdge_map[n].pairEdge].nextHalfEdge;
+					}
+					if (n != nil_pair) { o = n; }
+					else { o = p_n; n = o; }
+					//traverse to another vertex on boundary edge. save all the encountered vertices
+					auto counter = 0.;
+					do
+					{
+						auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+						ps.push_back(p);
+						n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+						counter++;
+					} while ((o != n) && (n != nil_pair) && (halfEdge_map[n].pairEdge != nil_pair));
+					//use the formula from the case that the valence is larger than 4 and not equal to 6
+					auto k = (new_halfEdge_map.size() + 1) * 2 + valence[pa[0]] + 1; // add 1 cause when we calc the valence, two adjust boundary edges will only give one valence to the vertex
+					auto p0 = find(ps.begin(), ps.end(), pa[0]);
+					ps1.insert(ps1.begin(), p0, ps.end());
+					ps1.insert(ps1.end(), ps.begin(), p0);
+					if (k == 3) {
+						double coeffs[3] = { 5. / 12., -1. / 12., -1. / 12. };
+						for (size_t j = 0; j < ps1.size(); j++)
+						{
+							auto coeff = coeffs[j];
+							pos += coeff*vertex[ps1[j]].pos;
+						}
+					}
+					if (k == 4) {
+						double coeffs[4] = { 3. / 8., 0, -1. / 8., 0 };
+						for (size_t j = 0; j < ps1.size(); j++)
+						{
+							auto coeff = coeffs[j];
+							pos += coeff*vertex[ps1[j]].pos;
+						}
+					}
+					if (k >= 5) {
+						for (size_t j = 0; j < ps1.size(); j++)
+						{
+							auto coeff = (1. / k)*((1. / 4.) + cos(2. * j*PI / k) + (1. / 2.)*(cos(4. * j*PI / k)));
+							pos += coeff*vertex[ps1[j]].pos;
+						}
+					}
 
+				}
 				o = make_pair(pa[1], pa[0]);
 				n = o;
 				if (valence[pa[1]] >= 5)
@@ -658,6 +733,62 @@ void ofApp::modifiedButterflySubdivisionButtonPressed()
 						counter++;
 					} while (o != n);
 				}
+				if (valence[pa[1]] < 0) {
+					pair<int, int> n;
+					if (halfEdge_map[o].pairEdge != nil_pair) {
+						n = halfEdge_map[halfEdge_map[o].pairEdge].nextHalfEdge;
+					}
+					else {
+						n = o;
+					}
+					vector<int> ps, ps1;
+					//find one vertex on the boundary edge
+					auto p_n = o;
+					while ((o != n) && (n != nil_pair) && (halfEdge_map[n].pairEdge != nil_pair)) {
+						p_n = n;
+						n = halfEdge_map[halfEdge_map[n].pairEdge].nextHalfEdge;
+					}
+					if (n != nil_pair) { o = n; }
+					else { o = p_n; n = o; }
+					//traverse to another vertex on boundary edge. save all the encountered vertices
+					auto counter = 0.;
+					do
+					{
+						auto p = halfEdge_map[halfEdge_map[n].nextHalfEdge].oriVertex;
+						ps.push_back(p);
+						n = halfEdge_map[halfEdge_map[n].prevHalfEdge].pairEdge;
+						counter++;
+					} while ((o != n) && (n != nil_pair) && (halfEdge_map[n].pairEdge != nil_pair));
+					//use the formula from the case that the valence is larger than 4 and not equal to 6
+					auto k = (new_halfEdge_map.size() + 1) * 2 + valence[pa[1]] + 1; // add 1 cause when we calc the valence, two adjust boundary edges will only give one valence to the vertex
+					auto p0 = find(ps.begin(), ps.end(), pa[0]);
+					ps1.insert(ps1.begin(), p0, ps.end());
+					ps1.insert(ps1.end(), ps.begin(), p0);
+					if (k == 3) {
+						double coeffs[3] = { 5. / 12., -1. / 12., -1. / 12. };
+						for (size_t j = 0; j < ps1.size(); j++)
+						{
+							auto coeff = coeffs[j];
+							pos += coeff*vertex[ps1[j]].pos;
+						}
+					}
+					if (k == 4) {
+						double coeffs[4] = { 3. / 8., 0, -1. / 8., 0 };
+						for (size_t j = 0; j < ps1.size(); j++)
+						{
+							auto coeff = coeffs[j];
+							pos += coeff*vertex[ps1[j]].pos;
+						}
+					}
+					if (k >= 5) {
+						for (size_t j = 0; j < ps1.size(); j++)
+						{
+							auto coeff = (1. / k)*((1. / 4.) + cos(2. * j*PI / k) + (1. / 2.)*(cos(4. * j*PI / k)));
+							pos += coeff*vertex[ps1[j]].pos;
+						}
+					}
+
+				}
 				new_vertex[i].pos = pos / 2;
 			}
 		}
@@ -695,10 +826,6 @@ void ofApp::calcNormals()
 	for (size_t i = 0; i < face.size(); i++)
 	{
 		face[i].normal = calcFaceNormal(i);
-	}
-	for (size_t i = 0; i < vertex.size(); i++)
-	{
-		mesh.addNormal(calcPointNormal(i));
 	}
 }
 
