@@ -30,14 +30,16 @@ using namespace std;
 void ofApp::setup() {
 	panel.setup();
 	panel.add(openFileButton.setup("open Model file"));
+	panel.add(inverseOrder.setup("Inverse the order", false));
 	panel.add(saveFileButton.setup("save Model file"));
 	panel.add(drawModel.setup("draw Model", false));
 	panel.add(drawWireFrame.setup("draw WireFrame", false));
 	panel.add(loopSubdivisionButton.setup("Loop Subdivision"));
 	panel.add(modifiedButterflySubdivisionButton.setup("MB Subdivision"));
 	panel.add(modelScale.setup("Model Scale", 100, 1, 1000));
-	panel.add(lightPos.setup("Light Position", ofVec3f(-100, -100, 100), ofVec3f(-100, -100, -100), ofVec3f(100, 100, 100)));
+	panel.add(ambientLightColor.setup("Ambient Light", 0.2, 0, 1));
 
+	panel.add(lightPos.setup("Light Position", ofVec3f(-100, -100, 100), ofVec3f(-100, -100, -100), ofVec3f(100, 100, 100)));
 	openFileButton.addListener(this, &ofApp::openFileButtonPressed);
 	saveFileButton.addListener(this, &ofApp::saveFileButtonPressed);
 
@@ -55,7 +57,7 @@ void ofApp::setup() {
 	light.enable();
 	light.setPointLight();	
 	ambientLight.enable();
-	ambientLight.setAmbientColor(ofFloatColor(0.2, 0.2, 0.2, 1));
+	ambientLight.setAmbientColor(ofFloatColor(ambientLightColor, ambientLightColor, ambientLightColor, 1));
 	light.setPosition(lightPos);
 
 }
@@ -68,7 +70,7 @@ void ofApp::update() {
 //--------------------------------------------------------------
 void ofApp::draw() {
 	light.setPosition(lightPos);
-
+	ambientLight.setAmbientColor(ofFloatColor(ambientLightColor, ambientLightColor, ambientLightColor, 1));
 	ofBackgroundGradient(ofColor(64), ofColor(0));
 	cam.begin();
 	ofEnableDepthTest();
@@ -162,7 +164,7 @@ void ofApp::openFileButtonPressed() {
 	ofFileDialogResult result = ofSystemLoadDialog("Load VRML file");
 	if (result.bSuccess) {
 		string path = result.getPath();
-		reader.loadVRMLFile(path);
+		reader.loadVRMLFile(path, inverseOrder);
 		this->halfEdge_map = reader.halfEdge_map;
 		this->vertex = reader.vertex;
 		this->face = reader.face;
@@ -826,6 +828,11 @@ void ofApp::calcNormals()
 	for (size_t i = 0; i < face.size(); i++)
 	{
 		face[i].normal = calcFaceNormal(i);
+	}
+	mesh.clearNormals();
+	for (size_t i = 0; i < vertex.size(); i++)
+	{
+		mesh.addNormal(calcPointNormal(i));
 	}
 }
 

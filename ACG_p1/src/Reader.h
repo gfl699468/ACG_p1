@@ -346,14 +346,21 @@ public:
 	map<int, Vertex> vertex;
 	map<int, Face> face;
 
-	inline void loadVRMLFile(string fileName) {
+	inline void loadVRMLFile(string fileName, bool inv) {
 		ifstream fs(fileName);
 		vector<string> context;
 		checkShape(&fs);
 		auto first_facet = facet[0];
 		facet.erase(facet.begin());
 		
-		loadFacet(get<0>(first_facet), get<1>(first_facet), get<2>(first_facet));
+		if (inv) {
+			loadFacet(get<2>(first_facet), get<1>(first_facet), get<0>(first_facet));
+
+		}
+		else {
+			loadFacet(get<0>(first_facet), get<1>(first_facet), get<2>(first_facet));
+
+		}
 
 		while (facet.size() != 0)
 		{

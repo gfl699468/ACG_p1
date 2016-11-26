@@ -14,6 +14,8 @@ class ofApp : public ofBaseApp{
 	ofxToggle drawWireFrame;
 	ofxFloatSlider modelScale;
 	ofxVec3Slider lightPos;
+	ofxFloatSlider ambientLightColor;
+	ofxToggle inverseOrder;
 	ofxButton loopSubdivisionButton;
 	ofxButton modifiedButterflySubdivisionButton;
 	Reader reader;
